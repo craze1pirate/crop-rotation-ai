@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-time Farm Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sensor-card {
+            background-color: #f9fafb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+            border: 1px solid #e5e7eb;
+        }
+        .sensor-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #111827;
+        }
+        .sensor-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        .rec-card {
+            transition: all 0.3s ease;
+            transform: scale(1);
+        }
+        .rec-card.highlight {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-8">Real-time Farm Dashboard</h1>
+
+        <!-- Sensor Data Section -->
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Live Sensor Readings</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                <!-- N, P, K -->
+                <div class="sensor-card"><div class="sensor-value" id="n-val">--</div><div class="sensor-label">Nitrogen (N)</div></div>
+                <div class="sensor-card"><div class="sensor-value" id="p-val">--</div><div class="sensor-label">Phosphorus (P)</div></div>
+                <div class="sensor-card"><div class="sensor-value" id="k-val">--</div><div class="sensor-label">Potassium (K)</div></div>
+                <!-- Temp, Humidity -->
+                <div class="sensor-card"><div class="sensor-value" id="temp-val">--</div><div class="sensor-label">Temperature</div></div>
+                <div class="sensor-card"><div class="sensor-value" id="hum-val">--</div><div class="sensor-label">Humidity</div></div>
+                <!-- pH, Rainfall -->
+                <div class="sensor-card"><div class="sensor-value" id="ph-val">--</div><div class="sensor-label">Soil pH</div></div>
+                <div class="sensor-card"><div class="sensor-value" id="rain-val">--</div><div class="sensor-label">Rainfall</div></div>
+                <!-- Soil Moisture -->
+                <div class="sensor-card"><div class="sensor-value" id="moist-val">--</div><div class="sensor-label">Soil Moisture</div></div>
+            </div>
+        </div>
+
+        <!-- Configuration and Recommendation Section -->
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Live Recommendations</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                
+                <!-- Farm Configuration -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 col-span-1">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">Farm Configuration</h3>
+                    <div class="space-y-4">
+                        <select id="state" class="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-500">
+                            <option value="" disabled selected>Loading States...</option>
+                        </select>
+                        <select id="soil" class="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-500">
+                            <option value="" disabled selected>Select Soil Type</option>
+                            <option value="Sandy">Sandy</option>
+                            <option value="Loamy">Loamy</option>
+                            <option value="Black">Black</option>
+                            <option value="Red">Red</option>
+                            <option value="Clayey">Clayey</option>
+                        </select>
+                    </div>
+                    <div id="error" class="mt-4 text-red-500 text-center font-semibold"></div>
+                    <div id="status" class="mt-4 text-green-500 text-center font-semibold"></div>
+                </div>
+
+                <!-- Recommendation Cards -->
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div id="crop-card" class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
+                        <span class="text-sm font-medium text-gray-500">Recommended Crop</span>
+                        <span id="cropResult" class="text-3xl font-bold text-green-600 mt-2">--</span>
+                    </div>
+                    <div id="fert-card" class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
+                        <span class="text-sm font-medium text-gray-500">Fertilizer</span>
+                        <span id="fertilizerResult" class="text-xl font-bold text-blue-600 mt-2">--</span>
+                    </div>
+                    <div id="yield-card" class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
+                        <span class="text-sm font-medium text-gray-500">Expected Yield</span>
+                        <span id="yieldResult" class="text-xl font-bold text-yellow-700 mt-2">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = ''; // Use empty string for relative path (when served by Flask)
+
+        const stateSelect = document.getElementById('state');
+        const soilSelect = document.getElementById('soil');
+        const errorDiv = document.getElementById('error');
+        const statusDiv = document.getElementById('status');
+        
+        // --- 1. Fetch initial data (States) ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch(`${API_URL}/get_initial_data`);
+                const data = await response.json();
+                
+                stateSelect.innerHTML = '<option value="" disabled selected>Select State</option>';
+                data.states.forEach(state => {
+                    const option = document.createElement('option');
+                    option.value = state;
+                    option.textContent = state;
+                    stateSelect.appendChild(option);
+                });
+            } catch (error) {
+                errorDiv.textContent = 'Error loading states. Is the server running?';
+                console.error('Error fetching states:', error);
+            }
+        });
+
+        // --- 2. Auto-fetch recommendations ---
+        setInterval(fetchLatestData, 5000); 
+
+        async function fetchLatestData() {
+            const state = stateSelect.value;
+            const soil = soilSelect.value;
+
+            if (!state || !soil) { return; }
+
+            errorDiv.textContent = '';
+            statusDiv.textContent = 'Updating...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/get_recommendation`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state, soil })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || 'Network error');
+                }
+
+                const result = await response.json();
+
+                // --- Update Sensor Readings ---
+                const sensor = result.sensor_data;
+                document.getElementById('n-val').textContent = sensor.n.toFixed(0);
+                document.getElementById('p-val').textContent = sensor.p.toFixed(0);
+                document.getElementById('k-val').textContent = sensor.k.toFixed(0);
+                document.getElementById('temp-val').textContent = sensor.temperature.toFixed(1) + '°C';
+                document.getElementById('hum-val').textContent = sensor.humidity.toFixed(1) + '%';
+                document.getElementById('ph-val').textContent = sensor.ph.toFixed(1);
+                document.getElementById('rain-val').textContent = sensor.rainfall.toFixed(1);
+                document.getElementById('moist-val').textContent = sensor.soil_moisture.toFixed(0); // New line
+
+                // --- Update Recommendations ---
+                const rec = result.recommendation;
+                document.getElementById('cropResult').textContent = rec.crop;
+                document.getElementById('fertilizerResult').textContent = rec.fertilizer;
+                document.getElementById('yieldResult').textContent = rec.yield;
+
+                highlightCard('crop-card');
+                highlightCard('fert-card');
+                highlightCard('yield-card');
+                
+                statusDiv.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+            } catch (error) {
+                errorDiv.textContent = `Error: ${error.message}`;
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        function highlightCard(cardId) {
+            const card = document.getElementById(cardId);
+            card.classList.add('highlight');
+            setTimeout(() => {
+                card.classList.remove('highlight');
+            }, 300);
+        }
+    </script>
+</body>
+</html>
