@@ -1,0 +1,1 @@
+Cloud host: https://crop-rotation-ai.onrender.com/

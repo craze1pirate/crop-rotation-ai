@@ -1,0 +1,4 @@
+ArduinoJson by Benoit Blanchon
+DHT sensor library by Adafruit
+In preference https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+then in Arduino board manager: esp32 by Espressif Systems
