@@ -177,6 +177,7 @@ def detect_disease():
     # Hugging Face Setup
     # REPLACE THIS TOKEN WITH YOUR ACTUAL HUGGING FACE TOKEN
     # Replace the old URL with this new one
+    # Just swap this ONE line. Keep everything else exactly the same.
     HF_API_URL = "https://api-inference.huggingface.co/models/dima806/plant_disease_detection"
     HF_HEADERS = {"Authorization": "Bearer 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"} 
     
@@ -202,4 +203,5 @@ def detect_disease():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
+
 
