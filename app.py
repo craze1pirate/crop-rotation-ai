@@ -4,7 +4,6 @@ import pandas as pd
 import joblib
 import numpy as np
 import threading
-import requests # <-- IMPORTED FOR ML API
 
 # --- Initialize Flask App ---
 # We tell Flask to look for the 'dashboard.html' file in the same folder ('.')
@@ -164,44 +163,5 @@ def get_recommendation():
         }
     })
 
-# --- NEW: Plant Disease Detection Endpoint ---
-@app.route('/detect_disease', methods=['POST'])
-def detect_disease():
-    """Handles image upload from dashboard and queries Hugging Face API."""
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    file = request.files['file']
-    image_bytes = file.read()
-    
-    # Hugging Face Setup
-    # REPLACE THIS TOKEN WITH YOUR ACTUAL HUGGING FACE TOKEN
-    # Replace the old URL with this new one
-    # Just swap this ONE line. Keep everything else exactly the same.
-    HF_API_URL = "https://api-inference.huggingface.co/models/dima806/plant_disease_detection"
-    HF_HEADERS = {"Authorization": "Bearer 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"} 
-    
-    try:
-        response = requests.post(HF_API_URL, headers=HF_HEADERS, data=image_bytes)
-        
-        if response.status_code == 200:
-            predictions = response.json()
-            # The API returns a list of dictionaries. We want the top prediction.
-            if predictions and isinstance(predictions, list):
-                best_prediction = predictions[0] 
-                return jsonify({
-                    'disease': best_prediction.get('label', 'Unknown'), 
-                    'confidence': best_prediction.get('score', 0.0)
-                })
-            else:
-                 return jsonify({'error': 'Unexpected response format from ML API'}), 500
-        else:
-            return jsonify({'error': 'ML API Failed', 'details': response.text}), response.status_code
-            
-    except Exception as e:
-         return jsonify({'error': 'Request to ML API failed', 'details': str(e)}), 500
-
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
-
-
