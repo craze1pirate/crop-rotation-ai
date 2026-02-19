@@ -176,7 +176,8 @@ def detect_disease():
     
     # Hugging Face Setup
     # REPLACE THIS TOKEN WITH YOUR ACTUAL HUGGING FACE TOKEN
-    HF_API_URL = "https://api-inference.huggingface.co/models/linkanjarad/mobilenet_v2_plant_disease"
+    # Replace the old URL with this new one
+    HF_API_URL = "https://api-inference.huggingface.co/models/dima806/plant_disease_detection"
     HF_HEADERS = {"Authorization": "Bearer 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"} 
     
     try:
@@ -201,3 +202,4 @@ def detect_disease():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
+
