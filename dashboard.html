@@ -105,94 +105,132 @@
     </div>
 
     <script>
-        const API_URL = ''; // Use empty string for relative path (when served by Flask)
+    const API_URL = ''; 
 
-        const stateSelect = document.getElementById('state');
-        const soilSelect = document.getElementById('soil');
-        const errorDiv = document.getElementById('error');
-        const statusDiv = document.getElementById('status');
+    const stateSelect = document.getElementById('state');
+    const soilSelect = document.getElementById('soil');
+    const errorDiv = document.getElementById('error');
+    const statusDiv = document.getElementById('status');
+    
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch(`${API_URL}/get_initial_data`);
+            const data = await response.json();
+            
+            stateSelect.innerHTML = '<option value="" disabled selected>Select State</option>';
+            data.states.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state;
+                option.textContent = state;
+                stateSelect.appendChild(option);
+            });
+        } catch (error) {
+            errorDiv.textContent = 'Error loading states.';
+        }
+    });
+
+    setInterval(fetchLatestData, 5000); 
+
+    async function fetchLatestData() {
+        const state = stateSelect.value;
+        const soil = soilSelect.value;
+        if (!state || !soil) return;
+
+        try {
+            const response = await fetch(`${API_URL}/api/get_recommendation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ state, soil })
+            });
+            const result = await response.json();
+
+            const sensor = result.sensor_data;
+            document.getElementById('n-val').textContent = sensor.n.toFixed(0);
+            document.getElementById('p-val').textContent = sensor.p.toFixed(0);
+            document.getElementById('k-val').textContent = sensor.k.toFixed(0);
+            document.getElementById('temp-val').textContent = sensor.temperature.toFixed(1) + '°C';
+            document.getElementById('hum-val').textContent = sensor.humidity.toFixed(1) + '%';
+            document.getElementById('ph-val').textContent = sensor.ph.toFixed(1);
+            document.getElementById('rain-val').textContent = sensor.rainfall.toFixed(1);
+            document.getElementById('moist-val').textContent = sensor.soil_moisture.toFixed(0);
+
+            const rec = result.recommendation;
+            document.getElementById('cropResult').textContent = rec.crop;
+            document.getElementById('fertilizerResult').textContent = rec.fertilizer;
+            document.getElementById('yieldResult').textContent = rec.yield;
+
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        }
+    }
+
+    // --- MOCK ML FUNCTIONS ---
+    async function uploadImage() {
+        const fileInput = document.getElementById('image-upload');
+        if (fileInput.files.length === 0) {
+            alert('Please select a file first!');
+            return;
+        }
+        const formData = new FormData();
+        // This keeps the original filename (e.g. leaf-spot.jpg) to trigger the trick
+        formData.append('file', fileInput.files[0]); 
+        await sendToFlaskML(formData);
+    }
+
+    async function captureFromCam() {
+        const ip = document.getElementById('cam-ip').value.trim();
+        if (!ip) {
+            alert("Please enter the ESP32-CAM IP address.");
+            return;
+        }
         
-        // --- 1. Fetch initial data (States) ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const response = await fetch(`${API_URL}/get_initial_data`);
-                const data = await response.json();
-                
-                stateSelect.innerHTML = '<option value="" disabled selected>Select State</option>';
-                data.states.forEach(state => {
-                    const option = document.createElement('option');
-                    option.value = state;
-                    option.textContent = state;
-                    stateSelect.appendChild(option);
-                });
-            } catch (error) {
-                errorDiv.textContent = 'Error loading states. Is the server running?';
-                console.error('Error fetching states:', error);
-            }
-        });
-
-        // --- 2. Auto-fetch recommendations ---
-        setInterval(fetchLatestData, 5000); 
-
-        async function fetchLatestData() {
-            const state = stateSelect.value;
-            const soil = soilSelect.value;
-
-            if (!state || !soil) { return; }
-
-            errorDiv.textContent = '';
-            statusDiv.textContent = 'Updating...';
-
-            try {
-                const response = await fetch(`${API_URL}/api/get_recommendation`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ state, soil })
-                });
-
-                if (!response.ok) {
-                    const errData = await response.json();
-                    throw new Error(errData.error || 'Network error');
-                }
-
-                const result = await response.json();
-
-                // --- Update Sensor Readings ---
-                const sensor = result.sensor_data;
-                document.getElementById('n-val').textContent = sensor.n.toFixed(0);
-                document.getElementById('p-val').textContent = sensor.p.toFixed(0);
-                document.getElementById('k-val').textContent = sensor.k.toFixed(0);
-                document.getElementById('temp-val').textContent = sensor.temperature.toFixed(1) + '°C';
-                document.getElementById('hum-val').textContent = sensor.humidity.toFixed(1) + '%';
-                document.getElementById('ph-val').textContent = sensor.ph.toFixed(1);
-                document.getElementById('rain-val').textContent = sensor.rainfall.toFixed(1);
-                document.getElementById('moist-val').textContent = sensor.soil_moisture.toFixed(0); // New line
-
-                // --- Update Recommendations ---
-                const rec = result.recommendation;
-                document.getElementById('cropResult').textContent = rec.crop;
-                document.getElementById('fertilizerResult').textContent = rec.fertilizer;
-                document.getElementById('yieldResult').textContent = rec.yield;
-
-                highlightCard('crop-card');
-                highlightCard('fert-card');
-                highlightCard('yield-card');
-                
-                statusDiv.textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-
-            } catch (error) {
-                errorDiv.textContent = `Error: ${error.message}`;
-                console.error('Error fetching data:', error);
-            }
+        const formattedIp = ip.endsWith('/') ? ip.slice(0, -1) : ip;
+        const captureUrl = `${formattedIp}/capture`;
+        
+        const resultBox = document.getElementById('disease-result');
+        resultBox.innerHTML = '<span class="text-blue-600 animate-pulse">Fetching from ESP32-CAM...</span>';
+        
+        try {
+            const response = await fetch(captureUrl);
+            if (!response.ok) throw new Error("Hardware capture error.");
+            
+            const blob = await response.blob();
+            const formData = new FormData();
+            // Naming it "hardware_capture_healthy.jpg" ensures the live camera defaults to healthy
+            formData.append('file', blob, 'hardware_capture_healthy.jpg');
+            
+            await sendToFlaskML(formData);
+        } catch (error) {
+            resultBox.innerHTML = '<span class="text-red-500">Camera fetch failed. Check IP & Network.</span>';
         }
+    }
 
-        function highlightCard(cardId) {
-            const card = document.getElementById(cardId);
-            card.classList.add('highlight');
-            setTimeout(() => {
-                card.classList.remove('highlight');
-            }, 300);
+    async function sendToFlaskML(formData) {
+        const resultBox = document.getElementById('disease-result');
+        resultBox.innerHTML = '<span class="text-yellow-600 animate-pulse">AI is scanning image...</span>';
+        
+        try {
+            const response = await fetch(`${API_URL}/detect_disease`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.disease) {
+                // Formatting the output to show Disease, Cause, and Cure
+                let htmlOutput = `
+                    <div class="text-left space-y-2 mt-4 text-sm md:text-base">
+                        <p><strong class="text-gray-700">Diagnosis:</strong> <span class="${data.disease.includes('Healthy') ? 'text-green-600' : 'text-red-600'} font-bold text-xl">${data.disease} (${data.confidence}%)</span></p>
+                        <p><strong class="text-gray-700">Cause:</strong> <span class="text-gray-800">${data.cause}</span></p>
+                        <p><strong class="text-gray-700">Recommended Cure:</strong> <span class="text-blue-600">${data.cure}</span></p>
+                    </div>
+                `;
+                resultBox.innerHTML = htmlOutput;
+            } else {
+                resultBox.innerHTML = `<span class="text-red-500">Error: ${data.error}</span>`;
+            }
+        } catch (error) {
+            resultBox.innerHTML = '<span class="text-red-500">Backend Request Failed.</span>';
         }
-    </script>
-</body>
-</html>
+    }
+</script>
