@@ -106,7 +106,7 @@ def detect_disease():
     HF_API_URL = "https://api-inference.huggingface.co/models/dima806/plant_disease_detection"
     
     # REPLACE THE TEXT BELOW WITH YOUR ACTUAL TOKEN! Keep the word "Bearer " and the quotes.
-    HF_HEADERS = {"Authorization": "Bearer YOUR_HUGGINGFACE_TOKEN"} 
+    HF_HEADERS = {"Authorization": "Bearer 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"} 
     
     try:
         response = requests.post(HF_API_URL, headers=HF_HEADERS, data=image_bytes)
@@ -150,3 +150,4 @@ def detect_disease():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
+
