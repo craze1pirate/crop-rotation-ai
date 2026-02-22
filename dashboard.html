@@ -217,7 +217,7 @@
                 
                 const blob = await response.blob();
                 const formData = new FormData();
-                formData.append('file', blob, 'hardware_capture_healthy.jpg');
+                formData.append('file', blob, 'hardware_capture.jpg');
                 
                 await sendToFlaskML(formData);
             } catch (error) {
