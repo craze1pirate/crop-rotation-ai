@@ -4,7 +4,7 @@ import pandas as pd
 import joblib
 import numpy as np
 import threading
-import time
+import requests
 
 app = Flask(__name__, template_folder='.')
 CORS(app)
@@ -93,38 +93,62 @@ def get_recommendation():
         'recommendation': {'crop': crop_prediction.capitalize(), 'fertilizer': fertilizer_prediction, 'yield': yield_prediction}
     })
 
-# --- MOCK ML DEMO ENDPOINT (GUARANTEED TO WORK) ---
+# --- REAL ML ENDPOINT WITH YOUR TOKEN ---
 @app.route('/detect_disease', methods=['POST'])
 def detect_disease():
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     
     file = request.files['file']
-    filename = file.filename.lower()
+    image_bytes = file.read()
     
-    # Simulate the AI processing time so it looks real
-    time.sleep(1.5)
+    # Using a confirmed, highly active Plant Disease model from Hugging Face
+    HF_API_URL = "https://api-inference.huggingface.co/models/wambugu71/crop_leaf_diseases_vit"
     
-    diseases_db = {
-        'spot': {'name': 'Bacterial Leaf Spot', 'cause': 'Bacteria (Xanthomonas)', 'cure': 'Apply copper-based bactericide and avoid overhead watering.'},
-        'blight': {'name': 'Early Blight', 'cause': 'Fungus (Alternaria solani)', 'cure': 'Prune lower leaves and apply chlorothalonil fungicide.'},
-        'rust': {'name': 'Common Rust', 'cause': 'Fungus (Puccinia sorghi)', 'cure': 'Apply mancozeb-based fungicide early in the season.'},
-        'healthy': {'name': 'Healthy Plant', 'cause': 'N/A', 'cure': 'Looking great! Maintain optimal NPK and moisture levels.'}
-    }
-
-    result = diseases_db['healthy']
+    # Your token is successfully embedded here
+    HF_HEADERS = {"Authorization": "Bearer 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"} 
     
-    for key, data in diseases_db.items():
-        if key in filename:
-            result = data
-            break
+    try:
+        # Added a 20-second timeout to handle cold-starts gracefully
+        response = requests.post(HF_API_URL, headers=HF_HEADERS, data=image_bytes, timeout=20)
+        
+        if response.status_code == 200:
+            predictions = response.json()
             
-    return jsonify({
-        'disease': result['name'],
-        'cause': result['cause'],
-        'cure': result['cure'],
-        'confidence': 98.7 
-    })
+            # Extract the highest probability result safely
+            if isinstance(predictions, list) and len(predictions) > 0:
+                if isinstance(predictions[0], list):
+                    best_prediction = predictions[0][0]
+                else:
+                    best_prediction = predictions[0]
+            else:
+                return jsonify({'error': 'Unexpected response format from AI'}), 500
+
+            # Clean up the output to look professional on the dashboard
+            raw_label = best_prediction.get('label', 'Unknown')
+            disease_name = raw_label.replace('_', ' ').title()
+            confidence = round(best_prediction.get('score', 0.0) * 100, 1)
+            
+            if "Healthy" in disease_name or "Background" in disease_name:
+                cause = "N/A"
+                cure = "Looking great! Maintain optimal NPK and moisture levels."
+            else:
+                cause = "Fungal, Viral, or Bacterial Infection"
+                cure = "Isolate the plant, remove infected leaves, and apply appropriate fungicide/bactericide."
+                
+            return jsonify({
+                'disease': disease_name,
+                'cause': cause,
+                'cure': cure,
+                'confidence': confidence
+            })
+        else:
+             return jsonify({'error': f'Hugging Face Error ({response.status_code})', 'details': response.text}), 500
+             
+    except requests.exceptions.Timeout:
+         return jsonify({'error': 'AI is waking up', 'details': 'Model is loading. Please click analyze again in 10 seconds.'}), 503
+    except Exception as e:
+         return jsonify({'error': 'Server Request Failed', 'details': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
