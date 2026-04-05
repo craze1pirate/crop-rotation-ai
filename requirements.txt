@@ -6,3 +6,5 @@ joblib
 numpy
 gunicorn
 requests
+google-generativeai
+pillow
