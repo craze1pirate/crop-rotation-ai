@@ -4,162 +4,206 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-time Farm Dashboard</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        
-        .sensor-card {
-            background-color: #f9fafb;
-            border-radius: 0.75rem;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-            border: 1px solid #e5e7eb;
-        }
-        .sensor-value { font-size: 2.25rem; font-weight: 700; color: #111827; }
-        .sensor-label { font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem; }
-        .rec-card { transition: all 0.3s ease; transform: scale(1); }
-        .rec-card.highlight {
-            transform: scale(1.02);
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05);
+        /* --- 100% RAW NATIVE CSS - NO TAILWIND REQUIRED --- */
+        :root {
+            --bg-body: #f3f4f6;
+            --bg-card: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --green: #10b981;
+            --green-hover: #059669;
+            --indigo: #4f46e5;
+            --indigo-hover: #4338ca;
+            --blue: #2563eb;
+            --blue-hover: #1d4ed8;
+            --red: #ef4444;
+            --yellow: #d97706;
         }
 
-        .bulletproof-grid {
-            display: grid;
-            gap: 1rem;
-            grid-template-columns: repeat(2, 1fr); 
-        }
-        @media (min-width: 768px) {
-            .bulletproof-grid { grid-template-columns: repeat(4, 1fr); } 
-        }
-        @media (min-width: 1024px) {
-            .bulletproof-grid { grid-template-columns: repeat(8, 1fr); } 
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); line-height: 1.5; padding: 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        h1 { text-align: center; font-size: 2.25rem; margin-bottom: 2.5rem; color: #111827; }
+        h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: #374151; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;}
+        h3 { font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem; color: #1f2937; }
+
+        /* Grids */
+        .grid-sensors { display: grid; gap: 1rem; grid-template-columns: repeat(2, 1fr); margin-bottom: 2.5rem; }
+        @media (min-width: 768px) { .grid-sensors { grid-template-columns: repeat(4, 1fr); } }
+        @media (min-width: 1024px) { .grid-sensors { grid-template-columns: repeat(8, 1fr); } }
+        
+        .grid-rec { display: grid; gap: 1.5rem; grid-template-columns: 1fr; margin-bottom: 2.5rem;}
+        @media (min-width: 768px) { .grid-rec { grid-template-columns: 1fr 2fr; } }
+        
+        .grid-3 { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+        @media (min-width: 640px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+        .grid-2 { display: grid; gap: 2rem; grid-template-columns: 1fr; align-items: start; }
+        @media (min-width: 768px) { .grid-2 { grid-template-columns: 1fr 1fr; } }
+
+        /* Cards */
+        .card { background: var(--bg-card); border-radius: 1rem; padding: 2rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); }
+        .sensor-card { background: #f9fafb; border: 1px solid var(--border); border-radius: 0.75rem; padding: 1.5rem; text-align: center; }
+        .sensor-value { font-size: 2rem; font-weight: 700; color: #111827; line-height: 1.2;}
+        .sensor-label { font-size: 0.875rem; color: var(--text-muted); margin-top: 0.5rem; }
+        .rec-card { text-align: center; display: flex; flex-direction: column; justify-content: center; background: var(--bg-card); border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid var(--border);}
+        
+        /* Form Elements */
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: #374151;}
+        select, input[type="text"], input[type="file"] { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; background: #f9fafb; font-family: inherit; font-size: 1rem; outline: none; }
+        select:focus, input[type="text"]:focus { border-color: var(--green); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+        
+        /* Buttons */
+        .btn { display: inline-block; width: 100%; padding: 0.75rem 1rem; font-weight: 600; text-align: center; border: none; border-radius: 0.5rem; cursor: pointer; color: white; transition: background 0.2s; font-size: 1rem; outline: none; }
+        .btn-green { background: var(--green); } .btn-green:hover { background: var(--green-hover); }
+        .btn-indigo { background: var(--indigo); } .btn-indigo:hover { background: var(--indigo-hover); }
+        .btn-blue { background: var(--blue); } .btn-blue:hover { background: var(--blue-hover); }
+        .btn-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        
+        /* Media Box (Camera/Stream) */
+        .media-box { background: #000; border-radius: 0.5rem; overflow: hidden; height: 220px; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid var(--border); margin-bottom: 1rem;}
+        .media-box img, .media-box video { width: 100%; height: 100%; object-fit: cover; }
+        .media-placeholder { color: #9ca3af; font-size: 0.875rem; font-weight: 600; letter-spacing: 0.05em; }
+        
+        /* Utilities */
+        .hidden { display: none !important; }
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mt-4 { margin-top: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        
+        /* Text Colors */
+        .text-green { color: var(--green); }
+        .text-red { color: var(--red); }
+        .text-blue { color: var(--blue); }
+        .text-yellow { color: var(--yellow); }
+        .text-muted { color: var(--text-muted); }
+        
+        /* AI Output Box */
+        .ai-output-container { background: #f9fafb; border: 1px solid var(--border); border-radius: 1rem; padding: 2rem; display: flex; flex-direction: column; justify-content: center; min-height: 250px; text-align: center;}
+        .ai-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+        .ai-result { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+        .diagnosis-details { text-align: left; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); font-size: 1rem; font-weight: normal;}
+        .diagnosis-details p { margin-bottom: 0.5rem; }
     </style>
 </head>
-<body class="bg-gray-100">
+<body>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 text-center mb-8">Crop Rotation & Plant AI Dashboard</h1>
+    <div class="container">
+        <h1>Crop Rotation & Plant AI Dashboard</h1>
 
-        <div class="mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Live Sensor Readings</h2>
-            <div class="bulletproof-grid">
-                <div class="sensor-card"><div class="sensor-value" id="n-val">--</div><div class="sensor-label">Nitrogen (N)</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="p-val">--</div><div class="sensor-label">Phosphorus (P)</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="k-val">--</div><div class="sensor-label">Potassium (K)</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="temp-val">--</div><div class="sensor-label">Temperature</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="hum-val">--</div><div class="sensor-label">Humidity</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="ph-val">--</div><div class="sensor-label">Soil pH</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="rain-val">--</div><div class="sensor-label">Rainfall</div></div>
-                <div class="sensor-card"><div class="sensor-value" id="moist-val">--</div><div class="sensor-label">Soil Moisture</div></div>
-            </div>
+        <h2>Live Sensor Readings</h2>
+        <div class="grid-sensors">
+            <div class="sensor-card"><div class="sensor-value" id="n-val">--</div><div class="sensor-label">Nitrogen (N)</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="p-val">--</div><div class="sensor-label">Phosphorus (P)</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="k-val">--</div><div class="sensor-label">Potassium (K)</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="temp-val">--</div><div class="sensor-label">Temperature</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="hum-val">--</div><div class="sensor-label">Humidity</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="ph-val">--</div><div class="sensor-label">Soil pH</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="rain-val">--</div><div class="sensor-label">Rainfall</div></div>
+            <div class="sensor-card"><div class="sensor-value" id="moist-val">--</div><div class="sensor-label">Soil Moisture</div></div>
         </div>
 
-        <div class="mb-8">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Recommendations</h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                
-                <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 col-span-1">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">Farm Configuration</h3>
-                    <div class="space-y-4">
-                        <select id="state" class="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700">
-                            <option value="" disabled selected>Loading States...</option>
-                        </select>
-                        <select id="soil" class="w-full p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700">
-                            <option value="" disabled selected>Select Soil Type</option>
-                            <option value="Sandy">Sandy</option>
-                            <option value="Loamy">Loamy</option>
-                            <option value="Black">Black</option>
-                            <option value="Red">Red</option>
-                            <option value="Clayey">Clayey</option>
-                        </select>
-                        <button onclick="fetchRecommendation()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md mt-4">
-                            Generate Recommendation
-                        </button>
-                    </div>
-                    <div id="rec-status" class="mt-4 text-center font-semibold text-sm"></div>
-                </div>
-
-                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-6">
-                    <div class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
-                        <span class="text-sm font-medium text-gray-500">Recommended Crop</span>
-                        <span id="cropResult" class="text-3xl font-bold text-green-600 mt-2">--</span>
-                    </div>
-                    <div class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
-                        <span class="text-sm font-medium text-gray-500">Fertilizer</span>
-                        <span id="fertilizerResult" class="text-xl font-bold text-blue-600 mt-2">--</span>
-                    </div>
-                    <div class="rec-card bg-white rounded-2xl shadow-lg p-6 text-center flex flex-col justify-center">
-                        <span class="text-sm font-medium text-gray-500">Expected Yield</span>
-                        <span id="yieldResult" class="text-xl font-bold text-yellow-700 mt-2">--</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Plant Disease Detection (AI)</h2>
-            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                
-                <div class="mb-6 border-b pb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Image Input Method:</label>
-                    <select id="input-mode" onchange="toggleInputMode()" class="w-full md:w-1/2 p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700">
-                        <option value="esp32">ESP32-CAM Stream</option>
-                        <option value="camera">Camera</option>
-                        <option value="upload">Manual Upload</option>
+        <h2>Recommendations</h2>
+        <div class="grid-rec">
+            
+            <div class="card">
+                <h3>Farm Configuration</h3>
+                <div class="input-group">
+                    <select id="state">
+                        <option value="" disabled selected>Loading States...</option>
                     </select>
                 </div>
+                <div class="input-group">
+                    <select id="soil">
+                        <option value="" disabled selected>Select Soil Type</option>
+                        <option value="Sandy">Sandy</option>
+                        <option value="Loamy">Loamy</option>
+                        <option value="Black">Black</option>
+                        <option value="Red">Red</option>
+                        <option value="Clayey">Clayey</option>
+                    </select>
+                </div>
+                <button onclick="fetchRecommendation()" class="btn btn-green mt-4">Generate Recommendation</button>
+                <div id="rec-status" class="text-center mt-4 text-sm font-weight-600"></div>
+            </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    
-                    <div class="space-y-4">
-                        
-                        <div id="mode-esp32" class="block">
-                            <p class="text-sm text-gray-500 mb-2">Enter ESP32 IP to view live video.</p>
-                            <input type="text" id="cam-ip" value="[http://192.168.1.50](http://192.168.1.50)" class="w-full p-2 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-green-500 mb-3">
-                            <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-48 border relative mb-3">
-                                <img id="live-stream" src="" class="object-cover w-full h-full hidden">
-                                <span id="stream-placeholder" class="text-gray-400 text-sm font-semibold">STREAM OFFLINE</span>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="startStream()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Start Stream</button>
-                                <button onclick="captureFromCam()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Capture & Scan</button>
-                            </div>
-                        </div>
-
-                        <div id="mode-camera" class="hidden">
-                            <p class="text-sm text-gray-500 mb-2">Use your built-in device camera.</p>
-                            <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-48 border relative mb-3">
-                                <video id="laptop-video" autoplay playsinline class="object-cover w-full h-full hidden"></video>
-                                <canvas id="laptop-canvas" class="hidden"></canvas>
-                                <span id="laptop-placeholder" class="text-gray-400 text-sm font-semibold">CAMERA OFF</span>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="startLaptopCamera()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Start Camera</button>
-                                <button onclick="captureFromLaptop()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Capture & Scan</button>
-                            </div>
-                        </div>
-
-                        <div id="mode-upload" class="hidden">
-                            <p class="text-sm text-gray-500 mb-2">Upload a leaf image from your device.</p>
-                            <input type="file" id="image-upload" accept="image/*" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm mb-3">
-                            <button onclick="uploadImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition shadow-md">
-                                Upload & Scan Image
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="h-full p-6 bg-gray-50 border border-gray-200 rounded-xl flex flex-col justify-center text-center min-h-[250px]">
-                        <span class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">AI Diagnosis Output</span>
-                        <div id="disease-result" class="text-xl font-bold text-gray-800">Waiting for image analysis...</div>
-                    </div>
-
+            <div class="grid-3">
+                <div class="rec-card">
+                    <span class="sensor-label">Recommended Crop</span>
+                    <span id="cropResult" class="sensor-value text-green mt-4">--</span>
+                </div>
+                <div class="rec-card">
+                    <span class="sensor-label">Fertilizer</span>
+                    <span id="fertilizerResult" class="sensor-value text-blue mt-4" style="font-size: 1.5rem;">--</span>
+                </div>
+                <div class="rec-card">
+                    <span class="sensor-label">Expected Yield</span>
+                    <span id="yieldResult" class="sensor-value text-yellow mt-4" style="font-size: 1.5rem;">--</span>
                 </div>
             </div>
         </div>
 
+        <h2>Plant Disease Detection (AI)</h2>
+        <div class="card">
+            <div class="input-group mb-6" style="border-bottom: 1px solid var(--border); padding-bottom: 1.5rem;">
+                <label>Select Image Input Method:</label>
+                <select id="input-mode" onchange="toggleInputMode()" style="max-width: 400px;">
+                    <option value="esp32">ESP32-CAM Stream</option>
+                    <option value="camera">Camera</option>
+                    <option value="upload">Manual Upload</option>
+                </select>
+            </div>
+
+            <div class="grid-2">
+                <div>
+                    <div id="mode-esp32" class="block">
+                        <p class="text-sm text-muted mb-2">Enter ESP32 IP to view live video.</p>
+                        <input type="text" id="cam-ip" value="http://192.168.1.50" class="mb-4">
+                        <div class="media-box">
+                            <img id="live-stream" src="" class="hidden">
+                            <span id="stream-placeholder" class="media-placeholder">STREAM OFFLINE</span>
+                        </div>
+                        <div class="btn-group">
+                            <button onclick="startStream()" class="btn btn-indigo">Start Stream</button>
+                            <button onclick="captureFromCam()" class="btn btn-green">Capture & Scan</button>
+                        </div>
+                    </div>
+
+                    <div id="mode-camera" class="hidden">
+                        <p class="text-sm text-muted mb-2">Use your built-in device camera.</p>
+                        <div class="media-box">
+                            <video id="laptop-video" autoplay playsinline class="hidden"></video>
+                            <canvas id="laptop-canvas" class="hidden"></canvas>
+                            <span id="laptop-placeholder" class="media-placeholder">CAMERA OFF</span>
+                        </div>
+                        <div class="btn-group">
+                            <button onclick="startLaptopCamera()" class="btn btn-indigo">Start Camera</button>
+                            <button onclick="captureFromLaptop()" class="btn btn-green">Capture & Scan</button>
+                        </div>
+                    </div>
+
+                    <div id="mode-upload" class="hidden">
+                        <p class="text-sm text-muted mb-4">Upload a leaf image from your device.</p>
+                        <input type="file" id="image-upload" accept="image/*" class="mb-4">
+                        <button onclick="uploadImage()" class="btn btn-blue mt-4">Upload & Scan Image</button>
+                    </div>
+                </div>
+
+                <div class="ai-output-container">
+                    <span class="ai-label">Diagnosis Output</span>
+                    <div id="disease-result" class="ai-result">Waiting for image analysis...</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -205,11 +249,11 @@
             const statusText = document.getElementById('rec-status');
 
             if (!state || !soil) {
-                statusText.innerHTML = '<span class="text-red-500">Please select State and Soil Type.</span>';
+                statusText.innerHTML = '<span class="text-red">Please select State and Soil Type.</span>';
                 return;
             }
 
-            statusText.innerHTML = '<span class="text-blue-500 animate-pulse">Running AI Model...</span>';
+            statusText.innerHTML = '<span class="text-blue">Running AI Model...</span>';
 
             try {
                 const response = await fetch(`${API_URL}/api/get_recommendation`, {
@@ -226,11 +270,11 @@
                 document.getElementById('fertilizerResult').textContent = rec.fertilizer;
                 document.getElementById('yieldResult').textContent = rec.yield;
                 
-                statusText.innerHTML = '<span class="text-green-500">Recommendation updated successfully!</span>';
+                statusText.innerHTML = '<span class="text-green">Recommendation updated successfully!</span>';
                 setTimeout(() => statusText.innerHTML = '', 3000);
 
             } catch (error) { 
-                statusText.innerHTML = `<span class="text-red-500">Error: ${error.message}</span>`;
+                statusText.innerHTML = `<span class="text-red">Error: ${error.message}</span>`;
             }
         }
 
@@ -238,15 +282,12 @@
         function toggleInputMode() {
             const mode = document.getElementById('input-mode').value;
             
-            // Hide all
             document.getElementById('mode-esp32').classList.add('hidden');
             document.getElementById('mode-camera').classList.add('hidden');
             document.getElementById('mode-upload').classList.add('hidden');
             
-            // Show selected
             document.getElementById(`mode-${mode}`).classList.remove('hidden');
             
-            // Turn off camera if switching away
             if (mode !== 'camera' && laptopVideo.srcObject) {
                 laptopVideo.srcObject.getTracks().forEach(track => track.stop());
                 laptopVideo.classList.add('hidden');
@@ -270,7 +311,7 @@
             if (!ip) { alert("Please enter the ESP32-CAM IP address."); return; }
             
             const captureUrl = `${ip.endsWith('/') ? ip.slice(0, -1) : ip}/capture`;
-            document.getElementById('disease-result').innerHTML = '<span class="text-blue-600 animate-pulse">Capturing from ESP32...</span>';
+            document.getElementById('disease-result').innerHTML = '<span class="text-blue">Capturing from ESP32...</span>';
             
             try {
                 const response = await fetch(captureUrl);
@@ -280,7 +321,7 @@
                 formData.append('file', blob, 'hardware_capture.jpg');
                 await sendToFlaskML(formData);
             } catch (error) {
-                document.getElementById('disease-result').innerHTML = '<span class="text-red-500 font-semibold">Camera capture failed.</span>';
+                document.getElementById('disease-result').innerHTML = '<span class="text-red">Camera capture failed.</span>';
             }
         }
 
@@ -303,7 +344,7 @@
                 alert("Please start the camera first.");
                 return;
             }
-            document.getElementById('disease-result').innerHTML = '<span class="text-blue-600 animate-pulse">Capturing from Camera...</span>';
+            document.getElementById('disease-result').innerHTML = '<span class="text-blue">Capturing from Camera...</span>';
             
             laptopCanvas.width = laptopVideo.videoWidth;
             laptopCanvas.height = laptopVideo.videoHeight;
@@ -326,7 +367,7 @@
 
         async function sendToFlaskML(formData) {
             const resultBox = document.getElementById('disease-result');
-            resultBox.innerHTML = '<span class="text-yellow-600 animate-pulse">AI is analyzing image...</span>';
+            resultBox.innerHTML = '<span class="text-yellow">AI is analyzing image...</span>';
             
             try {
                 const response = await fetch(`${API_URL}/detect_disease`, {
@@ -338,19 +379,18 @@
                 if (data.disease) {
                     const isHealthy = data.disease.toLowerCase().includes('healthy');
                     let htmlOutput = `
-                        <div class="text-left space-y-3 mt-2 text-sm md:text-base">
-                            <p><strong class="text-gray-700">Diagnosis:</strong> <span class="${isHealthy ? 'text-green-600' : 'text-red-600'} font-bold text-xl">${data.disease} (${data.confidence}%)</span></p>
-                            <p><strong class="text-gray-700">Primary Cause:</strong> <span class="text-gray-800">${data.cause}</span></p>
-                            <p><strong class="text-gray-700">Action:</strong> <span class="text-blue-600 font-medium">${data.cure}</span></p>
+                        <span class="${isHealthy ? 'text-green' : 'text-red'}">${data.disease} (${data.confidence}%)</span>
+                        <div class="diagnosis-details">
+                            <p><strong>Primary Cause:</strong> ${data.cause}</p>
+                            <p><strong>Action:</strong> <span class="text-blue">${data.cure}</span></p>
                         </div>
                     `;
                     resultBox.innerHTML = htmlOutput;
                 } else {
-                    // NOW WE PRINT THE ACTUAL ERROR TO THE DASHBOARD
-                    resultBox.innerHTML = `<span class="text-red-500 font-semibold break-words">Error: ${data.error}</span>`;
+                    resultBox.innerHTML = `<span class="text-red">Error: ${data.error}</span>`;
                 }
             } catch (error) {
-                resultBox.innerHTML = '<span class="text-red-500 font-semibold">Network/Server Error. Check console.</span>';
+                resultBox.innerHTML = '<span class="text-red">Network/Server Error. Check console.</span>';
             }
         }
     </script>
