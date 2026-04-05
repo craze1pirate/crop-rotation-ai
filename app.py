@@ -151,7 +151,7 @@ def get_recommendation():
 
     except Exception as e:
         print(f"Gemini Rec Error: {e}")
-        return jsonify({'error': f'AI Prediction failed. Details: {str(e)}'}), 500+
+        return jsonify({'error': f'AI Prediction failed. Details: {str(e)}'}), 500
 
 # --- AI PLANT DISEASE DETECTION ---
 @app.route('/detect_disease', methods=['POST'])
