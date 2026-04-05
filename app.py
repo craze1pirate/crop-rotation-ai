@@ -12,8 +12,8 @@ from PIL import Image
 import io
 
 # --- Configure Gemini API ---
-# Replace with your actual API key
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDCoLHsWfYy61z4BhuT4qRLkE50-503gQ")
+# Just hardcode it directly as a string for your review tomorrow to be safe!
+GEMINI_API_KEY = "AIzaSyDCoLHsWfYy61z4BhuT4qRLkE50-503gQQ"
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Use the 1.5 Flash model for fast multimodal tasks
