@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-time Farm Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         
-        /* Original Custom CSS */
         .sensor-card {
             background-color: #f9fafb;
             border-radius: 0.75rem;
@@ -26,17 +25,16 @@
             box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05);
         }
 
-        /* NEW: Bulletproof Offline-Ready Grid CSS */
         .bulletproof-grid {
             display: grid;
             gap: 1rem;
-            grid-template-columns: repeat(2, 1fr); /* Mobile layout */
+            grid-template-columns: repeat(2, 1fr); 
         }
         @media (min-width: 768px) {
-            .bulletproof-grid { grid-template-columns: repeat(4, 1fr); } /* Tablet layout */
+            .bulletproof-grid { grid-template-columns: repeat(4, 1fr); } 
         }
         @media (min-width: 1024px) {
-            .bulletproof-grid { grid-template-columns: repeat(8, 1fr); } /* Desktop layout */
+            .bulletproof-grid { grid-template-columns: repeat(8, 1fr); } 
         }
     </style>
 </head>
@@ -102,51 +100,62 @@
         </div>
 
         <div>
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Plant Disease Detection (Gemini AI)</h2>
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Plant Disease Detection (AI)</h2>
             <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    
-                    <div class="space-y-4 md:border-r md:pr-4 border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-800">1. ESP32-CAM Stream</h3>
-                        <p class="text-sm text-gray-500">Enter ESP32 IP to view live video.</p>
-                        <input type="text" id="cam-ip" value="http://192.168.1.50" class="w-full p-2 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-green-500">
-                        <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-40 border relative">
-                            <img id="live-stream" src="" class="object-cover w-full h-full hidden">
-                            <span id="stream-placeholder" class="text-gray-400 text-sm font-semibold">STREAM OFFLINE</span>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="startStream()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-xs">Start Stream</button>
-                            <button onclick="captureFromCam()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-xs">Capture & Scan</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4 md:border-r md:pr-4 border-gray-200">
-                        <h3 class="text-lg font-bold text-gray-800">2. Laptop WebCam</h3>
-                        <p class="text-sm text-gray-500">Use your built-in computer camera.</p>
-                        <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-40 border relative">
-                            <video id="laptop-video" autoplay playsinline class="object-cover w-full h-full hidden"></video>
-                            <canvas id="laptop-canvas" class="hidden"></canvas>
-                            <span id="laptop-placeholder" class="text-gray-400 text-sm font-semibold">CAMERA OFF</span>
-                        </div>
-                        <div class="flex space-x-2 mt-auto">
-                            <button onclick="startLaptopCamera()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-xs">Start Camera</button>
-                            <button onclick="captureFromLaptop()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-xs">Capture & Scan</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-bold text-gray-800">3. Manual Upload</h3>
-                        <p class="text-sm text-gray-500">Upload a leaf image from your device.</p>
-                        <input type="file" id="image-upload" accept="image/*" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm">
-                        <button onclick="uploadImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition shadow-md mt-4">
-                            Upload & Scan Image
-                        </button>
-                    </div>
+                
+                <div class="mb-6 border-b pb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Image Input Method:</label>
+                    <select id="input-mode" onchange="toggleInputMode()" class="w-full md:w-1/2 p-3 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700">
+                        <option value="esp32">ESP32-CAM Stream</option>
+                        <option value="camera">Camera</option>
+                        <option value="upload">Manual Upload</option>
+                    </select>
                 </div>
 
-                <div class="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-xl text-center">
-                    <span class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Gemini Diagnosis Output</span>
-                    <div id="disease-result" class="text-2xl font-bold text-gray-800 mt-2">Waiting for image analysis...</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    
+                    <div class="space-y-4">
+                        
+                        <div id="mode-esp32" class="block">
+                            <p class="text-sm text-gray-500 mb-2">Enter ESP32 IP to view live video.</p>
+                            <input type="text" id="cam-ip" value="[http://192.168.1.50](http://192.168.1.50)" class="w-full p-2 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-green-500 mb-3">
+                            <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-48 border relative mb-3">
+                                <img id="live-stream" src="" class="object-cover w-full h-full hidden">
+                                <span id="stream-placeholder" class="text-gray-400 text-sm font-semibold">STREAM OFFLINE</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="startStream()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Start Stream</button>
+                                <button onclick="captureFromCam()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Capture & Scan</button>
+                            </div>
+                        </div>
+
+                        <div id="mode-camera" class="hidden">
+                            <p class="text-sm text-gray-500 mb-2">Use your built-in device camera.</p>
+                            <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-48 border relative mb-3">
+                                <video id="laptop-video" autoplay playsinline class="object-cover w-full h-full hidden"></video>
+                                <canvas id="laptop-canvas" class="hidden"></canvas>
+                                <span id="laptop-placeholder" class="text-gray-400 text-sm font-semibold">CAMERA OFF</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="startLaptopCamera()" class="w-1/2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Start Camera</button>
+                                <button onclick="captureFromLaptop()" class="w-1/2 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-2 rounded-lg text-sm">Capture & Scan</button>
+                            </div>
+                        </div>
+
+                        <div id="mode-upload" class="hidden">
+                            <p class="text-sm text-gray-500 mb-2">Upload a leaf image from your device.</p>
+                            <input type="file" id="image-upload" accept="image/*" class="w-full p-2 bg-gray-50 border border-gray-200 rounded-lg text-sm mb-3">
+                            <button onclick="uploadImage()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition shadow-md">
+                                Upload & Scan Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="h-full p-6 bg-gray-50 border border-gray-200 rounded-xl flex flex-col justify-center text-center min-h-[250px]">
+                        <span class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">AI Diagnosis Output</span>
+                        <div id="disease-result" class="text-xl font-bold text-gray-800">Waiting for image analysis...</div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -225,6 +234,27 @@
             }
         }
 
+        // --- UI TOGGLE LOGIC ---
+        function toggleInputMode() {
+            const mode = document.getElementById('input-mode').value;
+            
+            // Hide all
+            document.getElementById('mode-esp32').classList.add('hidden');
+            document.getElementById('mode-camera').classList.add('hidden');
+            document.getElementById('mode-upload').classList.add('hidden');
+            
+            // Show selected
+            document.getElementById(`mode-${mode}`).classList.remove('hidden');
+            
+            // Turn off camera if switching away
+            if (mode !== 'camera' && laptopVideo.srcObject) {
+                laptopVideo.srcObject.getTracks().forEach(track => track.stop());
+                laptopVideo.classList.add('hidden');
+                document.getElementById('laptop-placeholder').classList.remove('hidden');
+            }
+        }
+
+        // --- CAMERA AND AI LOGIC ---
         function startStream() {
             const ip = document.getElementById('cam-ip').value.trim();
             if (!ip) { alert("Please enter the ESP32-CAM IP address."); return; }
@@ -264,7 +294,7 @@
                 laptopVideo.classList.remove('hidden');
                 document.getElementById('laptop-placeholder').classList.add('hidden');
             } catch (err) {
-                alert("Could not access laptop camera. Please check permissions.");
+                alert("Could not access camera. Please check permissions.");
             }
         }
 
@@ -273,7 +303,7 @@
                 alert("Please start the camera first.");
                 return;
             }
-            document.getElementById('disease-result').innerHTML = '<span class="text-blue-600 animate-pulse">Capturing from Laptop...</span>';
+            document.getElementById('disease-result').innerHTML = '<span class="text-blue-600 animate-pulse">Capturing from Camera...</span>';
             
             laptopCanvas.width = laptopVideo.videoWidth;
             laptopCanvas.height = laptopVideo.videoHeight;
@@ -296,7 +326,7 @@
 
         async function sendToFlaskML(formData) {
             const resultBox = document.getElementById('disease-result');
-            resultBox.innerHTML = '<span class="text-yellow-600 animate-pulse">Gemini AI is analyzing image...</span>';
+            resultBox.innerHTML = '<span class="text-yellow-600 animate-pulse">AI is analyzing image...</span>';
             
             try {
                 const response = await fetch(`${API_URL}/detect_disease`, {
@@ -308,18 +338,19 @@
                 if (data.disease) {
                     const isHealthy = data.disease.toLowerCase().includes('healthy');
                     let htmlOutput = `
-                        <div class="text-left space-y-2 mt-4 text-sm md:text-base border-t pt-4 border-gray-300">
+                        <div class="text-left space-y-3 mt-2 text-sm md:text-base">
                             <p><strong class="text-gray-700">Diagnosis:</strong> <span class="${isHealthy ? 'text-green-600' : 'text-red-600'} font-bold text-xl">${data.disease} (${data.confidence}%)</span></p>
                             <p><strong class="text-gray-700">Primary Cause:</strong> <span class="text-gray-800">${data.cause}</span></p>
-                            <p><strong class="text-gray-700">Recommended Action:</strong> <span class="text-blue-600 font-medium">${data.cure}</span></p>
+                            <p><strong class="text-gray-700">Action:</strong> <span class="text-blue-600 font-medium">${data.cure}</span></p>
                         </div>
                     `;
                     resultBox.innerHTML = htmlOutput;
                 } else {
-                    resultBox.innerHTML = `<span class="text-red-500">Error: ${data.error}</span>`;
+                    // NOW WE PRINT THE ACTUAL ERROR TO THE DASHBOARD
+                    resultBox.innerHTML = `<span class="text-red-500 font-semibold break-words">Error: ${data.error}</span>`;
                 }
             } catch (error) {
-                resultBox.innerHTML = '<span class="text-red-500 font-semibold">Backend AI Request Failed. Check console or API key.</span>';
+                resultBox.innerHTML = '<span class="text-red-500 font-semibold">Network/Server Error. Check console.</span>';
             }
         }
     </script>
