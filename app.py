@@ -13,11 +13,11 @@ import io
 
 # --- Configure Gemini API ---
 # Replace with your actual API key
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDCoLHsWfYy61z4BhuT4qRLkE50-503gQQ")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDCoLHsWfYy61z4BhuT4qRLkE50-503gQ")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Use the 1.5 Flash model for fast multimodal tasks
-vision_model = genai.GenerativeModel('gemini-1.5-flash')
+vision_model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = Flask(__name__, template_folder='.')
 CORS(app)
