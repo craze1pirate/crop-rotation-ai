@@ -5,6 +5,19 @@ import joblib
 import numpy as np
 import threading
 import time
+import os
+import json
+import google.generativeai as genai
+from PIL import Image
+import io
+
+# --- Configure Gemini API ---
+# Replace with your actual API key
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyAtCBZniimdMByRJ3G2CwL5oPzvHzQzMLo")
+genai.configure(api_key=GEMINI_API_KEY)
+
+# Use the 1.5 Flash model for fast multimodal tasks
+vision_model = genai.GenerativeModel('gemini-1.5-flash')
 
 app = Flask(__name__, template_folder='.')
 CORS(app)
@@ -70,6 +83,12 @@ def receive_sensor_data():
         }
     return jsonify({"status": "success"})
 
+# New Endpoint: Just get sensors for the dashboard UI
+@app.route('/api/get_live_sensors', methods=['GET'])
+def get_live_sensors():
+    with data_lock:
+        return jsonify(latest_sensor_data)
+
 @app.route('/api/get_recommendation', methods=['POST'])
 def get_recommendation():
     if model is None: return jsonify({'error': 'Model not loaded'}), 500
@@ -89,11 +108,10 @@ def get_recommendation():
     yield_prediction = get_expected_yield(crop_prediction, state)
 
     return jsonify({
-        'sensor_data': current_data,
         'recommendation': {'crop': crop_prediction.capitalize(), 'fertilizer': fertilizer_prediction, 'yield': yield_prediction}
     })
 
-# --- DYNAMIC DEMO AI FOR BOTH CAMERA & UPLOAD ---
+# --- GEMINI AI PLANT DISEASE DETECTION ---
 @app.route('/detect_disease', methods=['POST'])
 def detect_disease():
     if 'file' not in request.files:
@@ -102,34 +120,44 @@ def detect_disease():
     file = request.files['file']
     image_bytes = file.read()
     
-    # Simulate realistic AI processing delay
-    time.sleep(1.2)
-    
-    # Our highly realistic disease database
-    diseases = [
-        {'name': 'Anthracnose', 'cause': 'Colletotrichum Fungus', 'cure': 'Remove infected parts and spray copper fungicides.', 'base_conf': 94.2},
-        {'name': 'Early Blight', 'cause': 'Fungus (Alternaria solani)', 'cure': 'Prune lower leaves and apply chlorothalonil fungicide.', 'base_conf': 91.5},
-        {'name': 'Bacterial Leaf Spot', 'cause': 'Bacteria (Xanthomonas)', 'cure': 'Apply copper-based bactericide and avoid overhead watering.', 'base_conf': 96.8},
-        {'name': 'Common Rust', 'cause': 'Fungus (Puccinia sorghi)', 'cure': 'Apply mancozeb-based fungicide early in the season.', 'base_conf': 89.4},
-        {'name': 'Healthy Plant', 'cause': 'N/A', 'cure': 'Looking great! Maintain optimal NPK and moisture levels.', 'base_conf': 98.1}
-    ]
-    
-    # Use the exact file size to predictably pick a disease. 
-    # This works dynamically for BOTH uploads and ESP32-CAM captures!
-    file_size = len(image_bytes)
-    index = file_size % len(diseases)
-    
-    result = diseases[index]
-    
-    # Add a tiny bit of math to the confidence score based on file size so it looks incredibly real (e.g., 94.2 -> 94.5%)
-    confidence = round(result['base_conf'] + (file_size % 10) / 10.0, 1)
+    try:
+        # Load image for Gemini
+        img = Image.open(io.BytesIO(image_bytes))
         
-    return jsonify({
-        'disease': result['name'],
-        'cause': result['cause'],
-        'cure': result['cure'],
-        'confidence': confidence
-    })
+        prompt = """
+        You are an expert plant pathologist AI. Analyze the provided leaf image and identify the disease based ONLY on the following list:
+        1. Apple: Healthy, Apple scab, Black rot, Cedar apple rust.
+        2. Grape: Healthy, Black rot, Esca (black measles), Leaf Blight.
+        3. Peach: Healthy, Bacterial spot.
+        4. Potato: Healthy, Early blight, Late blight.
+        5. Tomato: Healthy, Early blight, Late blight, Bacterial spot, Leaf mold, Septoria leaf spot, Spider mites, Target spot, Tomato mosaic virus, Tomato yellow leaf curl virus.
+        6. Pepper: Healthy, Bacterial spot.
+        7. Orange: Healthy, Huanglongbing (Citrus greening).
+
+        Respond strictly with a valid JSON object (no markdown formatting, no code blocks) containing exactly these keys:
+        - "disease": The specific plant and disease name (e.g., "Tomato - Early Blight") or "Healthy Plant".
+        - "cause": A brief description of the pathogen causing it.
+        - "cure": A brief recommended agricultural treatment.
+        - "confidence": A number representing your confidence percentage (e.g., 95.5).
+        """
+        
+        response = vision_model.generate_content([prompt, img])
+        response_text = response.text.strip()
+        
+        # Clean up Markdown JSON blocks if Gemini adds them
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+            
+        result = json.loads(response_text.strip())
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"Gemini Error: {e}")
+        return jsonify({'error': 'AI processing failed. Please check your image and API key.'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
