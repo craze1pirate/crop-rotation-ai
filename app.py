@@ -89,27 +89,69 @@ def get_live_sensors():
     with data_lock:
         return jsonify(latest_sensor_data)
 
+# --- GEMINI CROP RECOMMENDATION ---
 @app.route('/api/get_recommendation', methods=['POST'])
 def get_recommendation():
-    if model is None: return jsonify({'error': 'Model not loaded'}), 500
     request_data = request.get_json()
-    state, soil = request_data.get('state'), request_data.get('soil')
-    if not state or not soil: return jsonify({'error': 'State/Soil missing'}), 400
+    state = request_data.get('state')
+    soil = request_data.get('soil')
+    
+    if not state or not soil: 
+        return jsonify({'error': 'Please select a State and Soil Type.'}), 400
 
-    with data_lock: current_data = latest_sensor_data.copy()
+    # Grab the exact sensor readings at the moment the button was clicked
+    with data_lock: 
+        current_data = latest_sensor_data.copy()
 
     try:
-        features = pd.DataFrame([{'N': current_data['n'], 'P': current_data['p'], 'K': current_data['k'], 'temperature': current_data['temperature'], 'humidity': current_data['humidity'], 'ph': current_data['ph'], 'rainfall': current_data['rainfall']}])
-        crop_prediction = model.predict(features)[0]
+        # We tell Gemini exactly what role to play and feed it the live sensor data
+        prompt = f"""
+        You are an expert agricultural AI in India. Based on the following live farm conditions, recommend the single best crop to plant, a suitable fertilizer, and the expected yield.
+
+        FARM CONDITIONS:
+        - Location State: {state}
+        - Soil Type: {soil}
+        - Nitrogen (N): {current_data['n']}
+        - Phosphorus (P): {current_data['p']}
+        - Potassium (K): {current_data['k']}
+        - Temperature: {current_data['temperature']}°C
+        - Humidity: {current_data['humidity']}%
+        - Soil pH: {current_data['ph']}
+        - Rainfall: {current_data['rainfall']} mm
+        - Soil Moisture: {current_data['soil_moisture']}%
+
+        Respond strictly with a valid JSON object (no markdown formatting, no code blocks) containing exactly these keys:
+        - "crop": The name of the recommended crop (e.g., "Wheat", "Rice", "Cotton").
+        - "fertilizer": The specific recommended fertilizer (e.g., "Urea", "DAP", "NPK 14-35-14").
+        - "yield": The expected yield as a string (e.g., "4.5 tonnes/hectare").
+        """
+        
+        # Call Gemini 2.5 Flash
+        response = vision_model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Clean up Markdown JSON blocks if Gemini adds them
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+            
+        result = json.loads(response_text.strip())
+
+        # Send it back to the dashboard!
+        return jsonify({
+            'recommendation': {
+                'crop': result['crop'], 
+                'fertilizer': result['fertilizer'], 
+                'yield': result['yield']
+            }
+        })
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-    fertilizer_prediction = recommend_fertilizer(crop_prediction, soil, current_data['soil_moisture'])
-    yield_prediction = get_expected_yield(crop_prediction, state)
-
-    return jsonify({
-        'recommendation': {'crop': crop_prediction.capitalize(), 'fertilizer': fertilizer_prediction, 'yield': yield_prediction}
-    })
+        print(f"Gemini Rec Error: {e}")
+        return jsonify({'error': f'AI Prediction failed. Details: {str(e)}'}), 500+
 
 # --- AI PLANT DISEASE DETECTION ---
 @app.route('/detect_disease', methods=['POST'])
