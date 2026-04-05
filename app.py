@@ -13,7 +13,7 @@ import io
 
 # --- Configure Gemini API ---
 # Replace with your actual API key
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyAtCBZniimdMByRJ3G2CwL5oPzvHzQzMLo")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDCoLHsWfYy61z4BhuT4qRLkE50-503gQQ")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Use the 1.5 Flash model for fast multimodal tasks
@@ -111,7 +111,7 @@ def get_recommendation():
         'recommendation': {'crop': crop_prediction.capitalize(), 'fertilizer': fertilizer_prediction, 'yield': yield_prediction}
     })
 
-# --- GEMINI AI PLANT DISEASE DETECTION ---
+# --- AI PLANT DISEASE DETECTION ---
 @app.route('/detect_disease', methods=['POST'])
 def detect_disease():
     if 'file' not in request.files:
@@ -121,7 +121,7 @@ def detect_disease():
     image_bytes = file.read()
     
     try:
-        # Load image for Gemini
+        # Load image for AI
         img = Image.open(io.BytesIO(image_bytes))
         
         prompt = """
@@ -144,7 +144,7 @@ def detect_disease():
         response = vision_model.generate_content([prompt, img])
         response_text = response.text.strip()
         
-        # Clean up Markdown JSON blocks if Gemini adds them
+        # Clean up Markdown JSON blocks if AI adds them
         if response_text.startswith("```json"):
             response_text = response_text[7:]
         if response_text.startswith("```"):
@@ -156,8 +156,9 @@ def detect_disease():
         return jsonify(result)
         
     except Exception as e:
-        print(f"Gemini Error: {e}")
-        return jsonify({'error': 'AI processing failed. Please check your image and API key.'}), 500
+        # I added `str(e)` here so the dashboard will tell you EXACTLY why it failed!
+        print(f"AI Error: {e}")
+        return jsonify({'error': f'AI processing failed. Details: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='0.0.0.0')
