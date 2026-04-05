@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Real-time Farm Dashboard</title>
-    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap)" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        
+        /* Original Custom CSS */
         .sensor-card {
             background-color: #f9fafb;
             border-radius: 0.75rem;
@@ -23,6 +25,19 @@
             transform: scale(1.02);
             box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05);
         }
+
+        /* NEW: Bulletproof Offline-Ready Grid CSS */
+        .bulletproof-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(2, 1fr); /* Mobile layout */
+        }
+        @media (min-width: 768px) {
+            .bulletproof-grid { grid-template-columns: repeat(4, 1fr); } /* Tablet layout */
+        }
+        @media (min-width: 1024px) {
+            .bulletproof-grid { grid-template-columns: repeat(8, 1fr); } /* Desktop layout */
+        }
     </style>
 </head>
 <body class="bg-gray-100">
@@ -32,7 +47,7 @@
 
         <div class="mb-8">
             <h2 class="text-2xl font-semibold text-gray-700 mb-4">Live Sensor Readings</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            <div class="bulletproof-grid">
                 <div class="sensor-card"><div class="sensor-value" id="n-val">--</div><div class="sensor-label">Nitrogen (N)</div></div>
                 <div class="sensor-card"><div class="sensor-value" id="p-val">--</div><div class="sensor-label">Phosphorus (P)</div></div>
                 <div class="sensor-card"><div class="sensor-value" id="k-val">--</div><div class="sensor-label">Potassium (K)</div></div>
@@ -94,7 +109,7 @@
                     <div class="space-y-4 md:border-r md:pr-4 border-gray-200">
                         <h3 class="text-lg font-bold text-gray-800">1. ESP32-CAM Stream</h3>
                         <p class="text-sm text-gray-500">Enter ESP32 IP to view live video.</p>
-                        <input type="text" id="cam-ip" value="[http://192.168.1.50](http://192.168.1.50)" class="w-full p-2 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-green-500">
+                        <input type="text" id="cam-ip" value="http://192.168.1.50" class="w-full p-2 bg-gray-50 rounded-lg border focus:ring-2 focus:ring-green-500">
                         <div class="bg-black rounded-lg overflow-hidden flex items-center justify-center h-40 border relative">
                             <img id="live-stream" src="" class="object-cover w-full h-full hidden">
                             <span id="stream-placeholder" class="text-gray-400 text-sm font-semibold">STREAM OFFLINE</span>
@@ -144,7 +159,6 @@
         const stateSelect = document.getElementById('state');
         const soilSelect = document.getElementById('soil');
         
-        // Load States
         document.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch(`${API_URL}/get_initial_data`);
@@ -159,7 +173,6 @@
             } catch (error) { console.error('Error loading states'); }
         });
 
-        // 1. Auto-refresh JUST the sensor readings every 5 seconds
         setInterval(fetchLiveSensors, 5000); 
 
         async function fetchLiveSensors() {
@@ -177,7 +190,6 @@
             } catch (error) { console.error('Error fetching live sensors'); }
         }
 
-        // 2. Fetch Recommendation ONLY when button is clicked
         async function fetchRecommendation() {
             const state = stateSelect.value;
             const soil = soilSelect.value;
@@ -213,9 +225,6 @@
             }
         }
 
-        // --- CAMERA AND AI LOGIC ---
-
-        // ESP32 Stream
         function startStream() {
             const ip = document.getElementById('cam-ip').value.trim();
             if (!ip) { alert("Please enter the ESP32-CAM IP address."); return; }
@@ -245,7 +254,6 @@
             }
         }
 
-        // Laptop WebCam Logic
         const laptopVideo = document.getElementById('laptop-video');
         const laptopCanvas = document.getElementById('laptop-canvas');
 
@@ -278,7 +286,6 @@
             }, 'image/jpeg');
         }
 
-        // Upload Logic
         async function uploadImage() {
             const fileInput = document.getElementById('image-upload');
             if (fileInput.files.length === 0) { alert('Please select a file first!'); return; }
@@ -287,7 +294,6 @@
             await sendToFlaskML(formData);
         }
 
-        // Send to Gemini Backend
         async function sendToFlaskML(formData) {
             const resultBox = document.getElementById('disease-result');
             resultBox.innerHTML = '<span class="text-yellow-600 animate-pulse">Gemini AI is analyzing image...</span>';
